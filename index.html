@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Музыкальный плеер</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1c1c1c;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        #player-container {
+            text-align: center;
+            padding: 20px;
+            background-color: #282828;
+        }
+
+        #search-input {
+            padding: 10px;
+            width: 80%;
+            margin-bottom: 10px;
+            font-size: 16px;
+            background-color: #282828;
+            color: #fff;
+            border: none;
+            border-bottom: 1px solid #666;
+        }
+
+        #search-input::placeholder {
+            color: #aaa;
+        }
+
+        #search-button {
+            padding: 10px;
+            background-color: #1db954;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #player {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .video-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .video-item {
+            cursor: pointer;
+            max-width: 150px;
+            overflow: hidden;
+            border: 1px solid #333;
+            border-radius: 5px;
+            position: relative;
+            background-color: #333;
+        }
+
+        .video-item img {
+            width: 100%;
+            height: auto;
+        }
+
+        .video-item p {
+            margin: 5px;
+            font-size: 14px;
+            color: #eee;
+        }
+
+        .favorite-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #1db954;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 5px;
+            display: none;
+        }
+
+        .video-item:hover .favorite-button {
+            display: block;
+        }
+
+        .download-button {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1db954;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 5px;
+            text-decoration: none;
+            display: none;
+        }
+
+        .video-item:hover .download-button {
+            display: block;
+        }
+
+        #favorites-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #favorites-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .favorite-item {
+            max-width: 150px;
+            overflow: hidden;
+            border: 1px solid #333;
+            border-radius: 5px;
+            position: relative;
+            background-color: #333;
+        }
+
+        .favorite-item img {
+            width: 100%;
+            height: auto;
+        }
+
+        .favorite-item p {
+            margin: 5px;
+            font-size: 14px;
+            color: #eee;
+        }
+
+        .remove-favorite-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 5px;
+            display: none;
+        }
+
+        .favorite-item:hover .remove-favorite-button {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="player-container">
+        <input type="text" id="search-input" placeholder="Поиск на YouTube">
+        <button id="search-button" onclick="searchYoutube()">Искать</button>
+        <div id="player"></div>
+        <div class="video-list" id="video-list"></div>
+    </div>
+
+    <div id="favorites-container">
+        <h2>Избранные</h2>
+        <div id="favorites-list"></div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let player;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '360',
+                width: '100%',
+                videoId: 'VIDEO_ID', // Замените на свой идентификатор видео
+                playerVars: {
+                    'origin': 'https://your-domain.com', // Замените на свой домен
+                    'playsinline': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // Код, который выполняется после готовности плеера
+        }
+
+        function onPlayerStateChange(event) {
+            // Код, который реагирует на изменение состояния воспроизведения
+        }
+
+        function searchYoutube() {
+            const searchQuery = document.getElementById('search-input').value;
+            const apiKey = 'AIzaSyCRmLhbp9JIMC_oAA4M7iiw1BK5K_m56Y4';
+            const apiUrl = `https://www.googleapis.com/youtube/v3/search?q=${searchQuery}&key=${apiKey}&part=snippet&type=video&maxResults=5`;
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    displayVideoResults(data.items);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function displayVideoResults(results) {
+            const videoListContainer = document.getElementById('video-list');
+            videoListContainer.innerHTML = '';
+
+            results.forEach(video => {
+                const videoItem = createVideoItem(video);
+                videoItem.addEventListener('click', () => {
+                    playSelectedVideo(video.id.videoId);
+                    addToFavorites(video, videoItem);
+                });
+                videoListContainer.appendChild(videoItem);
+            });
+        }
+
+        function createVideoItem(video) {
+            const videoItem = document.createElement('div');
+            videoItem.classList.add('video-item');
+            videoItem.innerHTML = `
+                <img src="${video.snippet.thumbnails.medium.url}" alt="${video.snippet.title}">
+                <p>${video.snippet.title}</p>
+                <button class="favorite-button">Добавить в избранное</button>
+                <a class="download-button" href="https://www.youtube.com/watch?v=${video.id.videoId}" target="_blank" download>Скачать</a>
+            `;
+            return videoItem;
+        }
+
+        function playSelectedVideo(videoId) {
+            player.loadVideoById(videoId);
+        }
+
+        function addToFavorites(video, videoItem) {
+            const favoritesListContainer = document.getElementById('favorites-list');
+            const favoriteItem = createVideoItem(video);
+            favoriteItem.classList.add('favorite-item');
+
+            const removeFavoriteButton = document.createElement('button');
+            removeFavoriteButton.innerText = 'Убрать из избранного';
+            removeFavoriteButton.classList.add('remove-favorite-button');
+            removeFavoriteButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                removeFromFavorites(video, favoriteItem);
+            });
+
+            favoriteItem.appendChild(removeFavoriteButton);
+            favoritesListContainer.appendChild(favoriteItem);
+
+            const addToFavoritesButton = videoItem.querySelector('.favorite-button');
+            if (addToFavoritesButton) {
+                addToFavoritesButton.style.display = 'none';
+            }
+
+            const downloadButton = videoItem.querySelector('.download-button');
+            if (downloadButton) {
+                downloadButton.style.display = 'none';
+            }
+
+            // Сохраняем в локальное хранилище
+            const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+            favorites.push(video);
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+        }
+
+        function removeFromFavorites(video, element) {
+            const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+            const updatedFavorites = favorites.filter(fav => fav.id.videoId !== video.id.videoId);
+            localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+
+            element.remove();
+        }
+
+        function loadFavorites() {
+            const favoritesListContainer = document.getElementById('favorites-list');
+            favoritesListContainer.innerHTML = '';
+
+            const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+            favorites.forEach(video => {
+                const favoriteItem = createVideoItem(video);
+                favoriteItem.classList.add('favorite-item');
+
+                const removeFavoriteButton = document.createElement('button');
+                removeFavoriteButton.innerText = 'Убрать из избранного';
+                removeFavoriteButton.classList.add('remove-favorite-button');
+                removeFavoriteButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    removeFromFavorites(video, favoriteItem);
+                });
+
+                favoriteItem.appendChild(removeFavoriteButton);
+                favoritesListContainer.appendChild(favoriteItem);
+            });
+        }
+
+        loadFavorites();
+    </script>
+</body>
+</html>
